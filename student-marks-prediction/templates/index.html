@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Student Marks Predictor</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, "Segoe UI", system-ui, sans-serif;
+      background: #f0f4f8;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      color: #1f2328;
+    }
+
+    .card {
+      background: #ffffff;
+      border-radius: 16px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.10);
+      padding: 40px 44px;
+      width: 100%;
+      max-width: 560px;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+    .header .icon {
+      font-size: 48px;
+      margin-bottom: 10px;
+    }
+    .header h1 {
+      font-size: 24px;
+      font-weight: 700;
+      color: #1f2328;
+    }
+    .header p {
+      font-size: 14px;
+      color: #57606a;
+      margin-top: 6px;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+    .form-group label {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 14px;
+      font-weight: 600;
+      color: #374151;
+      margin-bottom: 8px;
+    }
+    .form-group label .hint {
+      font-weight: 400;
+      font-size: 12px;
+      color: #9ca3af;
+    }
+
+    .slider-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    input[type="range"] {
+      flex: 1;
+      -webkit-appearance: none;
+      height: 6px;
+      border-radius: 4px;
+      background: #e5e7eb;
+      outline: none;
+      cursor: pointer;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #3b82d4;
+      cursor: pointer;
+      border: 2px solid #fff;
+      box-shadow: 0 0 0 2px #3b82d4;
+    }
+    .slider-val {
+      min-width: 44px;
+      text-align: right;
+      font-size: 14px;
+      font-weight: 700;
+      color: #3b82d4;
+    }
+
+    .btn {
+      width: 100%;
+      padding: 14px;
+      background: #3b82d4;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      margin-top: 8px;
+      letter-spacing: 0.4px;
+      transition: background 0.2s;
+    }
+    .btn:hover { background: #2563b0; }
+    .btn:disabled { background: #93c5fd; cursor: not-allowed; }
+
+    /* Result */
+    #result {
+      display: none;
+      margin-top: 28px;
+      border-top: 1px solid #e5e7eb;
+      padding-top: 24px;
+      text-align: center;
+    }
+    .result-score {
+      font-size: 64px;
+      font-weight: 800;
+      line-height: 1;
+    }
+    .result-label {
+      font-size: 13px;
+      color: #57606a;
+      margin-top: 4px;
+    }
+    .result-grade {
+      display: inline-block;
+      margin-top: 12px;
+      padding: 4px 18px;
+      border-radius: 20px;
+      font-size: 15px;
+      font-weight: 700;
+      color: #fff;
+    }
+    .result-remark {
+      font-size: 14px;
+      color: #374151;
+      margin-top: 14px;
+      font-style: italic;
+    }
+
+    /* Breakdown bars */
+    .breakdown {
+      margin-top: 22px;
+      text-align: left;
+    }
+    .breakdown h4 {
+      font-size: 13px;
+      font-weight: 700;
+      color: #57606a;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      margin-bottom: 12px;
+    }
+    .bar-row {
+      margin-bottom: 8px;
+    }
+    .bar-row .bar-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      color: #374151;
+      margin-bottom: 4px;
+    }
+    .bar-track {
+      height: 8px;
+      background: #f3f4f6;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .bar-fill {
+      height: 100%;
+      border-radius: 4px;
+      background: #3b82d4;
+      transition: width 0.5s ease;
+    }
+
+    #error-msg {
+      display: none;
+      margin-top: 16px;
+      background: #fef2f2;
+      border: 1px solid #fca5a5;
+      color: #b91c1c;
+      border-radius: 8px;
+      padding: 12px 16px;
+      font-size: 13px;
+    }
+
+    .spinner {
+      display: none;
+      width: 20px; height: 20px;
+      border: 3px solid #fff;
+      border-top-color: transparent;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      margin: 0 auto;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="header">
+      <div class="icon">🎓</div>
+      <h1>Student Marks Predictor</h1>
+      <p>Adjust the sliders and click <strong>Predict</strong> to estimate your exam score.</p>
+    </div>
+
+    <form id="pred-form">
+
+      <!-- Study Hours -->
+      <div class="form-group">
+        <label>Study Hours / Day <span class="hint">0 – 12 hrs</span></label>
+        <div class="slider-row">
+          <input type="range" id="study_hours" min="0" max="12" step="0.5" value="6" />
+          <span class="slider-val" id="study_hours_val">6 hrs</span>
+        </div>
+      </div>
+
+      <!-- Attendance -->
+      <div class="form-group">
+        <label>Attendance <span class="hint">40 – 100 %</span></label>
+        <div class="slider-row">
+          <input type="range" id="attendance" min="40" max="100" step="1" value="75" />
+          <span class="slider-val" id="attendance_val">75 %</span>
+        </div>
+      </div>
+
+      <!-- Previous Score -->
+      <div class="form-group">
+        <label>Previous Exam Score <span class="hint">0 – 100</span></label>
+        <div class="slider-row">
+          <input type="range" id="prev_score" min="0" max="100" step="1" value="60" />
+          <span class="slider-val" id="prev_score_val">60</span>
+        </div>
+      </div>
+
+      <!-- Sleep Hours -->
+      <div class="form-group">
+        <label>Sleep Hours / Night <span class="hint">3 – 10 hrs</span></label>
+        <div class="slider-row">
+          <input type="range" id="sleep_hours" min="3" max="10" step="0.5" value="7" />
+          <span class="slider-val" id="sleep_hours_val">7 hrs</span>
+        </div>
+      </div>
+
+      <!-- Assignments Done -->
+      <div class="form-group">
+        <label>Assignments Completed <span class="hint">0 – 100 %</span></label>
+        <div class="slider-row">
+          <input type="range" id="assignments_done" min="0" max="100" step="1" value="70" />
+          <span class="slider-val" id="assignments_done_val">70 %</span>
+        </div>
+      </div>
+
+      <button type="submit" class="btn" id="predict-btn">
+        <span id="btn-text">Predict My Marks</span>
+        <span class="spinner" id="spinner"></span>
+      </button>
+    </form>
+
+    <!-- Error -->
+    <div id="error-msg"></div>
+
+    <!-- Result -->
+    <div id="result">
+      <div class="result-score" id="score-display">--</div>
+      <div class="result-label">Predicted Score (out of 100)</div>
+      <div class="result-grade" id="grade-badge">–</div>
+      <div class="result-remark" id="remark-text"></div>
+
+      <div class="breakdown">
+        <h4>Your Input at a Glance</h4>
+        <div class="bar-row">
+          <div class="bar-label"><span>Study Hours</span><span id="b-study">–</span></div>
+          <div class="bar-track"><div class="bar-fill" id="bf-study" style="width:0%"></div></div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label"><span>Attendance</span><span id="b-att">–</span></div>
+          <div class="bar-track"><div class="bar-fill" id="bf-att" style="width:0%"></div></div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label"><span>Previous Score</span><span id="b-prev">–</span></div>
+          <div class="bar-track"><div class="bar-fill" id="bf-prev" style="width:0%"></div></div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label"><span>Sleep Hours</span><span id="b-sleep">–</span></div>
+          <div class="bar-track"><div class="bar-fill" id="bf-sleep" style="width:0%"></div></div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label"><span>Assignments Done</span><span id="b-assign">–</span></div>
+          <div class="bar-track"><div class="bar-fill" id="bf-assign" style="width:0%"></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const sliders = [
+      { id: "study_hours",      valId: "study_hours_val",      suffix: " hrs" },
+      { id: "attendance",       valId: "attendance_val",       suffix: " %"   },
+      { id: "prev_score",       valId: "prev_score_val",       suffix: ""     },
+      { id: "sleep_hours",      valId: "sleep_hours_val",      suffix: " hrs" },
+      { id: "assignments_done", valId: "assignments_done_val", suffix: " %"   },
+    ];
+
+    sliders.forEach(({ id, valId, suffix }) => {
+      const el  = document.getElementById(id);
+      const out = document.getElementById(valId);
+      el.addEventListener("input", () => { out.textContent = el.value + suffix; });
+    });
+
+    const remarks = {
+      "A+": "Outstanding! Keep up the excellent work! 🏆",
+      "A":  "Excellent performance! You're doing great!",
+      "B":  "Good job! A little more effort and you can top the class.",
+      "C":  "Fair result. Focus more on weak areas.",
+      "D":  "You passed, but there's room for improvement.",
+      "F":  "Don't give up! Increase study hours and attendance.",
+    };
+
+    document.getElementById("pred-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const btn     = document.getElementById("predict-btn");
+      const spinner = document.getElementById("spinner");
+      const btnText = document.getElementById("btn-text");
+      const errDiv  = document.getElementById("error-msg");
+      const resDiv  = document.getElementById("result");
+
+      btn.disabled     = true;
+      spinner.style.display = "block";
+      btnText.style.display = "none";
+      errDiv.style.display  = "none";
+      resDiv.style.display  = "none";
+
+      const payload = {};
+      sliders.forEach(({ id }) => { payload[id] = parseFloat(document.getElementById(id).value); });
+
+      try {
+        const resp = await fetch("/predict", {
+          method:  "POST",
+          headers: { "Content-Type": "application/json" },
+          body:    JSON.stringify(payload),
+        });
+        const data = await resp.json();
+
+        if (!resp.ok || data.error) {
+          errDiv.textContent    = data.error || "An unexpected error occurred.";
+          errDiv.style.display  = "block";
+        } else {
+          document.getElementById("score-display").textContent = data.predicted_marks;
+          document.getElementById("score-display").style.color = data.color;
+
+          const badge = document.getElementById("grade-badge");
+          badge.textContent        = "Grade: " + data.grade;
+          badge.style.background   = data.color;
+
+          document.getElementById("remark-text").textContent = remarks[data.grade] || "";
+
+          // Bars
+          const sh = payload.study_hours, at = payload.attendance,
+                ps = payload.prev_score,  sl = payload.sleep_hours, as = payload.assignments_done;
+
+          document.getElementById("b-study").textContent  = sh + " hrs";
+          document.getElementById("bf-study").style.width = (sh / 12 * 100).toFixed(0) + "%";
+
+          document.getElementById("b-att").textContent  = at + " %";
+          document.getElementById("bf-att").style.width = (at).toFixed(0) + "%";
+
+          document.getElementById("b-prev").textContent  = ps;
+          document.getElementById("bf-prev").style.width = (ps).toFixed(0) + "%";
+
+          document.getElementById("b-sleep").textContent  = sl + " hrs";
+          document.getElementById("bf-sleep").style.width = (sl / 10 * 100).toFixed(0) + "%";
+
+          document.getElementById("b-assign").textContent  = as + " %";
+          document.getElementById("bf-assign").style.width = (as).toFixed(0) + "%";
+
+          resDiv.style.display = "block";
+        }
+      } catch (err) {
+        errDiv.textContent   = "Network error: " + err.message;
+        errDiv.style.display = "block";
+      } finally {
+        btn.disabled          = false;
+        spinner.style.display = "none";
+        btnText.style.display = "inline";
+      }
+    });
+  </script>
+</body>
+</html>
